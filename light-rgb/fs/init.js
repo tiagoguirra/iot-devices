@@ -49,10 +49,23 @@ GPIO.set_button_handler(
   IOT.setPairingMode,
   null
 );
+GPIO.set_button_handler(
+  0,
+  GPIO.PULL_UP,
+  GPIO.INT_EDGE_NEG,
+  10,
+  function() {
+    print('Button inboard change');
+    state.power = state.power === 'ON' ? 'OFF' : 'ON';
+    IOT.interaction('power', state, 'physical_interaction');
+    changeState();
+  },
+  null
+);
 
 let reportState = function() {
   if (online) {
-    Shadow.update(0, state);
+    IOT.report(state);
   }
 };
 
@@ -78,8 +91,9 @@ let changeState = function() {
   }
 };
 
-Shadow.addHandler(function(event, obj) {
+IOT.handler(function(event, obj) {
   if (event === 'UPDATE_DELTA') {
+    print('Event', event, JSON.stringify(obj));
     for (let key in obj) {
       if (key === 'power') {
         state.power = obj.power;
@@ -106,7 +120,6 @@ Shadow.addHandler(function(event, obj) {
     changeState();
     reportState();
   }
-  print('Event', event, JSON.stringify(obj));
 });
 
 Event.on(
@@ -116,11 +129,15 @@ Event.on(
     Shadow.update(0, { ram_total: Sys.total_ram() });
     if (MQTT.isConnected()) {
       GPIO.write(led_status, false);
-      IOT.register(IOT.template.LIGHT_RGB, {
-        power: true,
-        color: true,
-        brightness: true,
-      });
+      IOT.register(
+        IOT.template.LIGHT_RGB,
+        {
+          power: true,
+          color: true,
+          brightness: true,
+        },
+        { power: 'OFF' }
+      );
     }
   },
   null
