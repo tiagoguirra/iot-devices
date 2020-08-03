@@ -11,8 +11,8 @@ load('api_iot.js');
 
 let led_status = IOT.ledStatus();
 
-let rele = 4;
-let button = 5;
+let rele = 5;
+let button = 14;
 
 let state = {
   power: 'OFF',
@@ -35,40 +35,9 @@ Timer.set(
   null
 );
 
-GPIO.set_button_handler(
-  0,
-  GPIO.PULL_UP,
-  GPIO.INT_EDGE_NEG,
-  5000,
-  IOT.setPairingMode,
-  null
-);
-
-GPIO.set_button_handler(
-  0,
-  GPIO.PULL_UP,
-  GPIO.INT_EDGE_NEG,
-  10,
-  function() {
-    state.power = state.power === 'ON' ? 'OFF' : 'ON';
-  },
-  null
-);
-
-GPIO.set_button_handler(
-  button,
-  GPIO.PULL_UP,
-  GPIO.INT_EDGE_ANY,
-  10,
-  function() {
-    state.power = state.power === 'ON' ? 'OFF' : 'ON';
-  },
-  null
-);
-
 let reportState = function() {
   if (online) {
-    Shadow.update(0, state);
+    IOT.report(state);
   }
 };
 
@@ -89,7 +58,45 @@ let changeState = function() {
   }
 };
 
-Shadow.addHandler(function(event, obj) {
+GPIO.set_button_handler(
+  0,
+  GPIO.PULL_UP,
+  GPIO.INT_EDGE_NEG,
+  5000,
+  IOT.setPairingMode,
+  null
+);
+
+GPIO.set_button_handler(
+  0,
+  GPIO.PULL_UP,
+  GPIO.INT_EDGE_NEG,
+  10,
+  function() {
+    print('Button inboard change');
+    state.power = state.power === 'ON' ? 'OFF' : 'ON';
+    IOT.interaction('power', state, 'physical_interaction');
+    changeState();
+  },
+  null
+);
+
+GPIO.set_button_handler(
+  button,
+  GPIO.PULL_UP,
+  GPIO.INT_EDGE_ANY,
+  10,
+  function() {
+    print('Button change');
+    state.power = state.power === 'ON' ? 'OFF' : 'ON';
+    IOT.interaction('power', state, 'physical_interaction');
+    changeState();
+  },
+  null
+);
+
+IOT.handler(function(event, obj) {
+  print('Event', event, JSON.stringify(obj));
   if (event === 'UPDATE_DELTA') {
     for (let key in obj) {
       if (key === 'power') {
@@ -109,7 +116,6 @@ Shadow.addHandler(function(event, obj) {
     changeState();
     reportState();
   }
-  print('Event', event, JSON.stringify(obj));
 });
 
 Event.on(
@@ -119,9 +125,13 @@ Event.on(
     Shadow.update(0, { ram_total: Sys.total_ram() });
     if (MQTT.isConnected()) {
       GPIO.write(led_status, false);
-      IOT.register(IOT.template.LIGHT, {
-        power: true,
-      });
+      IOT.register(
+        IOT.template.LIGHT,
+        {
+          power: true,
+        },
+        { power: 'OFF' }
+      );
     }
   },
   null
