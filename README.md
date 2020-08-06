@@ -10,6 +10,7 @@ This project contains a iot devices with mongoose os.
 
 - Light rgb
 - Light
+- Smartlock pulse mode
 
 ## Installation & Flashing
 

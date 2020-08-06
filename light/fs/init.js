@@ -10,19 +10,19 @@ load('api_rpc.js');
 load('api_iot.js');
 
 let led_status = IOT.ledStatus();
-
 let rele = 5;
 let button = 14;
 
 let state = {
   power: 'OFF',
 };
-let rebooted = false;
 let online = false;
 
 GPIO.set_mode(led_status, GPIO.MODE_OUTPUT);
 GPIO.set_mode(rele, GPIO.MODE_OUTPUT);
 GPIO.write(led_status, true);
+
+// default initial state is off
 GPIO.write(rele, true);
 Timer.set(
   300,
@@ -53,6 +53,17 @@ Timer.set(
 let changeState = function() {
   if (state.power === 'ON') {
     GPIO.write(rele, false);
+    if (IOT.isPulse()) {
+      let pulseTime = IOT.getPulseTime();
+      Timer.set(
+        pulseTime,
+        0,
+        function() {
+          IOT.interaction('power', { power: 'OFF' }, 'physical_interaction');
+        },
+        null
+      );
+    }
   } else {
     GPIO.write(rele, true);
   }
@@ -101,20 +112,13 @@ IOT.handler(function(event, obj) {
     for (let key in obj) {
       if (key === 'power') {
         state.power = obj.power;
-      } else if (key === 'reboot') {
-        rebooted = true;
-        Timer.set(
-          750,
-          0,
-          function() {
-            Sys.reboot(500);
-          },
-          null
-        );
+      } else if (key === 'config') {
+        IOT.setConfig(obj.config);
+      } else if (key === 'initialState') {
+        IOT.setInitialState(obj.initialState);
       }
     }
     changeState();
-    reportState();
   }
 });
 
@@ -125,13 +129,9 @@ Event.on(
     Shadow.update(0, { ram_total: Sys.total_ram() });
     if (MQTT.isConnected()) {
       GPIO.write(led_status, false);
-      IOT.register(
-        IOT.template.LIGHT,
-        {
-          power: true,
-        },
-        { power: 'OFF' }
-      );
+      IOT.register(IOT.template.LIGHT, {
+        power: true,
+      });
     }
   },
   null

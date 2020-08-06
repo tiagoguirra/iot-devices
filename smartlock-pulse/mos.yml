@@ -1,0 +1,29 @@
+author: Tiago Guirra <tiagobg_bg@hotmail.com>
+description: IOT Smartlock
+# arch: PLATFORM
+version: 1.0
+manifest_version: 2017-05-18
+
+platforms: [cc3200, esp32, esp8266]
+
+libs_version: ${mos.version}
+modules_version: ${mos.version}
+mongoose_os_version: ${mos.version}
+
+tags:
+  - js
+
+sources:
+  - src
+
+filesystem:
+  - fs
+
+config_schema:
+  - ['iot.pulse', 'i', 3000, { title: 'Pulse time' }]
+
+libs:
+  - origin: https://github.com/tiagoguirra/mongoose-os-iot-lib
+  - origin: https://github.com/mongoose-os-libs/aws
+build_vars:
+  SSL: mbedTLS

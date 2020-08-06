@@ -105,20 +105,13 @@ IOT.handler(function(event, obj) {
         state.blue = obj.blue ? obj.blue : 0;
       } else if (key === 'brightness') {
         state.brightness = obj.brightness ? obj.brightness : 1;
-      } else if (key === 'reboot') {
-        rebooted = true;
-        Timer.set(
-          750,
-          0,
-          function() {
-            Sys.reboot(500);
-          },
-          null
-        );
+      } else if (key === 'config') {
+        IOT.setConfig(obj.config);
+      } else if (key === 'initialState') {
+        IOT.setInitialState(obj.initialState);
       }
     }
     changeState();
-    reportState();
   }
 });
 
@@ -129,15 +122,11 @@ Event.on(
     Shadow.update(0, { ram_total: Sys.total_ram() });
     if (MQTT.isConnected()) {
       GPIO.write(led_status, false);
-      IOT.register(
-        IOT.template.LIGHT_RGB,
-        {
-          power: true,
-          color: true,
-          brightness: true,
-        },
-        { power: 'OFF' }
-      );
+      IOT.register(IOT.template.LIGHT_RGB, {
+        power: true,
+        color: true,
+        brightness: true,
+      });
     }
   },
   null
