@@ -1,5 +1,5 @@
 author: Tiago Guirra <tiagobg_bg@hotmail.com>
-description: IOT light rgb
+description: IOT Smartlock
 # arch: PLATFORM
 version: 1.0
 manifest_version: 2017-05-18
@@ -18,9 +18,6 @@ sources:
 
 filesystem:
   - fs
-
-config_schema:
-  - ['device.id', 'TESTE123']
 
 libs:
   - origin: https://github.com/tiagoguirra/mongoose-os-iot-lib
